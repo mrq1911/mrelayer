@@ -13,6 +13,7 @@
   "dependencies": {
     "@certusone/wormhole-sdk": "^0.9.11",
     "@mysten/sui.js": "^0.32.1",
+    "@polkadot/types": "^11.0.2",
     "@types/node": "^20.4.2",
     "@wormhole-foundation/relayer-engine": "^0.3.2",
     "koa": "^2.14.1",

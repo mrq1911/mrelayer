@@ -3,7 +3,7 @@ import {
   StandardRelayerApp,
   StandardRelayerContext,
 } from "@wormhole-foundation/relayer-engine";
-import {CHAIN_ID_ACALA, CHAIN_ID_ETH, CHAIN_ID_MOONBEAM, ChainId, TokenBridgePayload} from "@certusone/wormhole-sdk";
+import {CHAIN_ID_ACALA, CHAIN_ID_ETH, CHAIN_ID_MOONBEAM, CHAIN_ID_SOLANA, ChainId, TokenBridgePayload} from "@certusone/wormhole-sdk";
 import logger from "./logger";
 import {Contract, ethers} from "ethers";
 import {VersionedUserAction} from "./gmp";
@@ -30,12 +30,13 @@ const gmp = new Contract('0x0000000000000000000000000000000000000816', ['functio
         startingSequenceConfig: {
           [CHAIN_ID_ACALA as ChainId]: BigInt(process.env.ACA_FROM_SEQ || 2600),
           [CHAIN_ID_ETH as ChainId]: BigInt(process.env.ETH_FROM_SEQ || 269379),
+          [CHAIN_ID_SOLANA as ChainId]: BigInt(process.env.SOLANA_FROM_SEQ || 313796945),
         }
       }
     },
   );
 
-  app.tokenBridge([CHAIN_ID_ACALA, CHAIN_ID_ETH],
+  app.tokenBridge([CHAIN_ID_ACALA, CHAIN_ID_ETH, CHAIN_ID_SOLANA],
     async (ctx, next) => {
       const { payload } = ctx.tokenBridge;
       const { vaa, sourceTxHash } = ctx;

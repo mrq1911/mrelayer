@@ -9,7 +9,7 @@ import {Contract, ethers} from "ethers";
 import {VersionedUserAction} from "./gmp";
 
 const MRL_ADDRESS = "0000000000000000000000000000000000000000000000000000000000000816";
-const moonbeam = new ethers.providers.JsonRpcProvider('https://moonbeam-rpc.dwellir.com');
+const moonbeam = new ethers.providers.JsonRpcProvider(process.env.MOONBEAM_RPC || 'https://moonbeam-rpc.n.dwellir.com');
 const signer = new ethers.Wallet(process.env.PRIVKEY, moonbeam);
 const gmp = new Contract('0x0000000000000000000000000000000000000816', ['function wormholeTransferERC20(bytes) external'], signer);
 

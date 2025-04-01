@@ -28,9 +28,9 @@ const gmp = new Contract('0x0000000000000000000000000000000000000816', ['functio
       redis: { host: process.env.REDIS_HOST || "localhost", port: Number(process.env.REDIS_PORT) || 6379 },
       missedVaaOptions: {
         startingSequenceConfig: {
-          [CHAIN_ID_ACALA as ChainId]: BigInt(process.env.ACA_FROM_SEQ || 2600),
-          [CHAIN_ID_ETH as ChainId]: BigInt(process.env.ETH_FROM_SEQ || 269379),
-          [CHAIN_ID_SOLANA as ChainId]: BigInt(process.env.SOLANA_FROM_SEQ || 313796945),
+          [CHAIN_ID_ACALA as ChainId]: BigInt(process.env.ACA_FROM_SEQ || 3358),
+          [CHAIN_ID_ETH as ChainId]: BigInt(process.env.ETH_FROM_SEQ || 499562),
+          [CHAIN_ID_SOLANA as ChainId]: BigInt(process.env.SOLANA_FROM_SEQ || 1211243),
         }
       }
     },

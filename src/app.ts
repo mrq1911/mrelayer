@@ -22,9 +22,62 @@ const gmp = new Contract('0x0000000000000000000000000000000000000816', ['functio
 
 (async function main() {
   let currentNonce = await moonbeam.getTransactionCount(signer.address);
-  const nextNonce = () => currentNonce++
+  const nextNonce = () => currentNonce++;
   logger.info(`account ${signer.address}`);
   logger.info(`nonce ${currentNonce}`);
+
+  // Create a queue system to process transfers one by one
+  type TransferTask = {
+    vaa: any;
+    logger: any;
+    next: () => void;
+  };
+
+  const transferQueue: TransferTask[] = [];
+  let isProcessing = false;
+
+  async function processQueue() {
+    if (isProcessing || transferQueue.length === 0) return;
+
+    isProcessing = true;
+    const task = transferQueue.shift()!;
+
+    try {
+      task.logger.info(`Found VAA`);
+      await gmp.callStatic.wormholeTransferERC20(task.vaa.bytes, {nonce: currentNonce});
+      task.logger.info(`Completing transfer`);
+      const tx = await gmp.wormholeTransferERC20(task.vaa.bytes, {nonce: currentNonce});
+      task.logger.info(`Transfer completed in ${tx.hash}`);
+      task.logger.info(`Next nonce: ${nextNonce()}`);
+      task.next();
+    } catch (e) {
+      const text = JSON.stringify(e);
+      if (text.indexOf('transfer already completed') !== -1) {
+        task.logger.info(`Transfer already completed`);
+        task.next();
+      } else if (text.indexOf('Invalid GMP Payload') !== -1) {
+        task.logger.error(`Invalid GMP payload`);
+        task.next();
+      } else if (text.indexOf('nonce too low') !== -1) {
+        task.logger.info(`nonce too low, reloading nonce...`);
+        currentNonce = await moonbeam.getTransactionCount(signer.address);
+        // Re-add the task to the front of the queue
+        transferQueue.unshift(task);
+      } else {
+        task.logger.error(e.error || e.message || e);
+        task.next();
+      }
+    } finally {
+      isProcessing = false;
+      // Process the next item in the queue
+      processQueue();
+    }
+  }
+
+  function addToTransferQueue(task: TransferTask) {
+    transferQueue.push(task);
+    processQueue();
+  }
 
   const app = new StandardRelayerApp<StandardRelayerContext>(
     Environment.MAINNET,
@@ -55,40 +108,15 @@ const gmp = new Contract('0x0000000000000000000000000000000000000816', ['functio
         && toChain === CHAIN_ID_MOONBEAM
         && to === MRL_ADDRESS) {
 
-        // TODO parse payload to filter only hydra ones
-        //new VersionedUserAction('0x' + tokenTransferPayload.toString("hex"))
-
-        async function completeTransfer(canRetry = true) {
-          try {
-            logger.info(`Found VAA`);
-            await gmp.callStatic.wormholeTransferERC20(vaa.bytes, {nonce: currentNonce})
-            logger.info(`Completing transfer`);
-            const tx = await gmp.wormholeTransferERC20(vaa.bytes, {nonce: currentNonce});
-            logger.info(`Transfer completed in ${tx.hash}`);
-            logger.info('Next nonce: ', nextNonce());
-            return next();
-          } catch (e) {
-            const text = JSON.stringify(e);
-            if (text.indexOf('transfer already completed') !== -1) {
-              logger.info(`Transfer already completed`);
-              return next();
-            }
-            if (text.indexOf('Invalid GMP Payload') !== -1) {
-              logger.error(`Invalid GMP payload`);
-              return next();
-            }
-            if (canRetry && text.indexOf('nonce too low') !== -1) {
-              logger.info(`nonce too low, reloading nonce...`);
-              currentNonce = await moonbeam.getTransactionCount(signer.address);
-              await completeTransfer(false);
-            }
-            ctx.logger.error(e.error || e.message || e);
-          }
-        }
-
-        await completeTransfer();
+        // Instead of calling completeTransfer directly, add to queue
+        addToTransferQueue({
+          vaa,
+          logger,
+          next
+        });
+      } else {
+        return next();
       }
-
     },
   );
 

@@ -14,8 +14,5 @@ export default winston.createLogger({
       format: "YYYY-MM-DD HH:mm:ss.SSS",
     }),
     winston.format.errors({stack: true}),
-    winston.format.printf(({timestamp, level, message, stack}) => {
-      return `${timestamp} ${level}: ${stack || message}`;
-    })
   ),
 });

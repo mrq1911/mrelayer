@@ -47,6 +47,7 @@ const gmp = new Contract('0x0000000000000000000000000000000000000816', ['functio
       await gmp.callStatic.wormholeTransferERC20(task.vaa.bytes, {nonce: currentNonce});
       task.logger.info(`Completing transfer`);
       const tx = await gmp.wormholeTransferERC20(task.vaa.bytes, {nonce: currentNonce});
+      await tx.wait();
       task.logger.info(`Transfer completed in ${tx.hash}`);
       task.logger.info(`Next nonce: ${nextNonce()}`);
       task.next();

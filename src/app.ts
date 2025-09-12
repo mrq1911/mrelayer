@@ -107,15 +107,17 @@ const gmp = new Contract('0x0000000000000000000000000000000000000816', ['functio
       const logger = ctx.logger.child({sourceTxHash});
 
       if (payloadType === TokenBridgePayload.TransferWithPayload
-        && toChain === CHAIN_ID_MOONBEAM
-        && to === MRL_ADDRESS) {
+        && toChain === CHAIN_ID_MOONBEAM) {
+        logger.info("Found message to MOONBEAM:", {to});
 
-        // Instead of calling completeTransfer directly, add to queue
-        addToTransferQueue({
-          vaa,
-          logger,
-          next
-        });
+        if (to === MRL_ADDRESS) {
+          // Instead of calling completeTransfer directly, add to queue
+          addToTransferQueue({
+            vaa,
+            logger,
+            next
+          });
+        }
       } else {
         return next();
       }

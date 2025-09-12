@@ -7,7 +7,7 @@ import {
   CHAIN_ID_ACALA,
   CHAIN_ID_ETH,
   CHAIN_ID_MOONBEAM,
-  CHAIN_ID_SOLANA,
+  CHAIN_ID_SOLANA, CHAIN_ID_SUI,
   ChainId,
   TokenBridgePayload
 } from "@certusone/wormhole-sdk";
@@ -92,12 +92,13 @@ const gmp = new Contract('0x0000000000000000000000000000000000000816', ['functio
           [CHAIN_ID_ACALA as ChainId]: BigInt(process.env.ACA_FROM_SEQ || 3358),
           [CHAIN_ID_ETH as ChainId]: BigInt(process.env.ETH_FROM_SEQ || 499562),
           [CHAIN_ID_SOLANA as ChainId]: BigInt(process.env.SOLANA_FROM_SEQ || 1211243),
+          [CHAIN_ID_SUI as ChainId]: BigInt(process.env.SUI_FROM_SEQ || 217370),
         }
       }
     },
   );
 
-  app.tokenBridge([CHAIN_ID_ACALA, CHAIN_ID_ETH, CHAIN_ID_SOLANA],
+  app.tokenBridge([CHAIN_ID_ACALA, CHAIN_ID_ETH, CHAIN_ID_SOLANA, CHAIN_ID_SUI],
     async (ctx, next) => {
       const {payload} = ctx.tokenBridge;
       const {vaa, sourceTxHash} = ctx;

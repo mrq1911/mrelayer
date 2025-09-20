@@ -105,6 +105,7 @@ const gmp = new Contract('0x0000000000000000000000000000000000000816', ['functio
       const {payloadType, toChain, tokenTransferPayload} = payload;
       const to = payload.to.toString("hex");
       const logger = ctx.logger.child({sourceTxHash});
+      logger.debug('message', payload);
 
       if (payloadType === TokenBridgePayload.TransferWithPayload
         && toChain === CHAIN_ID_MOONBEAM) {

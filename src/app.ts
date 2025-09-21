@@ -13,12 +13,64 @@ import {
 } from "@certusone/wormhole-sdk";
 import logger from "./logger";
 import {Contract, ethers} from "ethers";
-import {VersionedUserAction} from "./gmp";
 
 const MRL_ADDRESS = "0000000000000000000000000000000000000000000000000000000000000816";
 const moonbeam = new ethers.providers.JsonRpcProvider(process.env.MOONBEAM_RPC || 'https://moonbeam-rpc.n.dwellir.com');
 const signer = new ethers.Wallet(process.env.PRIVKEY, moonbeam);
 const gmp = new Contract('0x0000000000000000000000000000000000000816', ['function wormholeTransferERC20(bytes) external'], signer);
+
+// Add fetch function for Wormhole API fallback
+async function loadVaaFromWormholeApi(emitterChain: number, emitterAddr: string, sequence: number) {
+  const url = `https://api.wormholescan.io/api/v1/vaas/${emitterChain}/${emitterAddr}/${sequence}?parsedPayload=true`;
+
+  try {
+    const response = await fetch(url);
+    const apiData = await response.json();
+
+    if (!apiData.data) {
+      throw new Error('No VAA data found');
+    }
+
+    const {data} = apiData;
+    const {payload} = data;
+
+    // Extract variables matching the app's needs
+    const vaaBytes = Buffer.from(data.vaa, 'base64');
+    const to = payload.toAddress.replace('0x', '').toLowerCase();
+    const toChain = payload.toChain;
+    const payloadType = payload.payloadType;
+    const amount = payload.amount;
+    const fromAddress = payload.fromAddress;
+    const tokenAddress = payload.tokenAddress;
+    const tokenChain = payload.tokenChain;
+
+    // Create a payload object compatible with existing logic
+    const tokenBridgePayload = {
+      payloadType,
+      toChain,
+      to: Buffer.from(to, 'hex'),
+      tokenTransferPayload: {
+        amount: BigInt(amount),
+        fromAddress,
+        tokenAddress,
+        tokenChain
+      }
+    };
+
+    return {
+      payload: tokenBridgePayload,
+      sourceTxHash: data.txHash,
+      timestamp: data.timestamp,
+      emitterChain: data.emitterChain,
+      sequence: data.sequence,
+      vaaBytes
+    };
+
+  } catch (error) {
+    logger.error(`Failed to load VAA from Wormhole API: ${error.message}`);
+    throw error;
+  }
+}
 
 (async function main() {
   let currentNonce = await moonbeam.getTransactionCount(signer.address);
@@ -101,19 +153,44 @@ const gmp = new Contract('0x0000000000000000000000000000000000000816', ['functio
   app.tokenBridge([CHAIN_ID_ACALA, CHAIN_ID_ETH, CHAIN_ID_SOLANA, CHAIN_ID_SUI],
     async (ctx, next) => {
       const {vaa, sourceTxHash} = ctx;
-      const {payload} = ctx.tokenBridge;
+      let {payload} = ctx.tokenBridge;
       const logger = ctx.logger.child({sourceTxHash});
+
+      // If no payload, try loading from Wormhole API
       if (!payload) {
-        logger.info('payload missing, context', payload);
+        logger.info('Payload missing, attempting to load from Wormhole API...');
+
+        try {
+          // Extract emitter info from VAA
+          const emitterChain = vaa.emitterChain;
+          const emitterAddr = vaa.emitterAddress.toString('hex');
+          const sequence = vaa.sequence;
+
+          logger.info(`Loading VAA ${emitterChain}/${emitterAddr}/${sequence} from API`);
+
+          const apiVaaData = await loadVaaFromWormholeApi(emitterChain, emitterAddr, sequence);
+          payload = apiVaaData.payload;
+
+          logger.info('Successfully loaded payload from Wormhole API');
+          logger.debug('API payload', payload);
+        } catch (error) {
+          logger.error(`Failed to load from API: ${error.message}`);
+          return next();
+        }
+      }
+
+      if (!payload) {
+        logger.info('No payload available from any source');
         return next();
       } else {
         logger.debug('payload', payload);
       }
-      const {payloadType, toChain, tokenTransferPayload} = payload;
+
+      const {payloadType, toChain} = payload;
       const to = payload.to.toString("hex");
 
       if (payloadType === TokenBridgePayload.TransferWithPayload
-        && toChain === CHAIN_ID_MOONBEAM) {
+          && toChain === CHAIN_ID_MOONBEAM) {
         logger.info("Found message to MOONBEAM:", {to});
 
         if (to === MRL_ADDRESS) {
@@ -123,8 +200,12 @@ const gmp = new Contract('0x0000000000000000000000000000000000000816', ['functio
             logger,
             next
           });
+        } else {
+          logger.info(`Message not for MRL address. Target: ${to}, Expected: ${MRL_ADDRESS}`);
+          return next();
         }
       } else {
+        logger.info(`Message not for processing. PayloadType: ${payloadType}, ToChain: ${toChain}`);
         return next();
       }
     },

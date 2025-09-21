@@ -100,12 +100,17 @@ const gmp = new Contract('0x0000000000000000000000000000000000000816', ['functio
 
   app.tokenBridge([CHAIN_ID_ACALA, CHAIN_ID_ETH, CHAIN_ID_SOLANA, CHAIN_ID_SUI],
     async (ctx, next) => {
-      const {payload} = ctx.tokenBridge;
       const {vaa, sourceTxHash} = ctx;
+      const {payload} = ctx.tokenBridge;
+      const logger = ctx.logger.child({sourceTxHash});
+      if (!payload) {
+        logger.info('payload missing, context', payload);
+        return next();
+      } else {
+        logger.debug('payload', payload);
+      }
       const {payloadType, toChain, tokenTransferPayload} = payload;
       const to = payload.to.toString("hex");
-      const logger = ctx.logger.child({sourceTxHash});
-      logger.debug('message', payload);
 
       if (payloadType === TokenBridgePayload.TransferWithPayload
         && toChain === CHAIN_ID_MOONBEAM) {

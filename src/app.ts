@@ -161,23 +161,18 @@ async function loadVaaFromWormholeApi(emitterChain: number, emitterAddr: string,
       if (!payload) {
         logger.info('Payload missing, attempting to load from Wormhole API...');
 
-        try {
-          // Extract emitter info from VAA
-          const emitterChain = vaa.emitterChain;
-          const emitterAddr = vaa.emitterAddress.toString('hex');
-          const sequence = vaa.sequence;
+        // Extract emitter info from VAA
+        const emitterChain = vaa.emitterChain;
+        const emitterAddr = vaa.emitterAddress.toString('hex');
+        const sequence = vaa.sequence;
 
-          logger.info(`Loading VAA ${emitterChain}/${emitterAddr}/${sequence} from API`);
+        logger.info(`Loading VAA ${emitterChain}/${emitterAddr}/${sequence} from API`);
 
-          const apiVaaData = await loadVaaFromWormholeApi(emitterChain, emitterAddr, Number(sequence));
-          payload = apiVaaData.payload;
+        const apiVaaData = await loadVaaFromWormholeApi(emitterChain, emitterAddr, Number(sequence));
+        payload = apiVaaData.payload;
 
-          logger.info('Successfully loaded payload from Wormhole API');
-          logger.debug('API payload', payload);
-        } catch (error) {
-          logger.error(`Failed to load from API: ${error.message}`);
-          return next();
-        }
+        logger.info('Successfully loaded payload from Wormhole API');
+        logger.debug('API payload', payload);
       }
 
       if (!payload) {

@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "start": "ts-node src/app.ts",
+    "start": "node app.js",
+    "start:base": "node app-base.js",
+    "dev": "ts-node src/app.ts",
+    "dev:base": "ts-node src/app-base.ts",
     "build": "tsc",
     "watch": "tsc --watch",
     "redis": "docker run --rm -p 6379:6379 --name redis-docker -d redis",

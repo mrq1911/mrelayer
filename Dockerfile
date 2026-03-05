@@ -10,4 +10,5 @@ COPY --from=builder /app/build .
 COPY package.json .
 COPY package-lock.json .
 RUN npm install --production
-CMD [ "node", "app.js" ]
+ENTRYPOINT [ "npm", "run" ]
+CMD [ "start" ]

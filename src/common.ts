@@ -77,6 +77,7 @@ export async function getPayloadWithFallback(ctx: any, ctxLogger: any) {
 
 export type TransferTask = {
   vaa: any;
+  type?: 'mrl' | 'insta';
   payloadType?: number;
   logger: any;
   next: () => void;

@@ -60,13 +60,17 @@ const instaBridgeProxy = new Contract(
   logger.info(`Watching InstaBridge on Base: ${INSTA_BRIDGE_BASE}`);
   logger.info(`Submitting to InstaBridgeProxy on Moonbeam: ${INSTA_BRIDGE_MOONBEAM}`);
 
-  const app = new StandardRelayerApp<StandardRelayerContext>(
+  const spyEndpoint = process.env.SPY_ENDPOINT || "localhost:7073";
+  const redis = {host: process.env.REDIS_HOST || "localhost", port: Number(process.env.REDIS_PORT) || 6379};
+
+  // MRL relayer app
+  const mrlApp = new StandardRelayerApp<StandardRelayerContext>(
     Environment.MAINNET,
     {
       name: process.env.APP_NAME || `mrelayer11`,
       logger,
-      spyEndpoint: process.env.SPY_ENDPOINT || "localhost:7073",
-      redis: {host: process.env.REDIS_HOST || "localhost", port: Number(process.env.REDIS_PORT) || 6379},
+      spyEndpoint,
+      redis,
       missedVaaOptions: {
         startingSequenceConfig: {
           [CHAIN_ID_ACALA as ChainId]: BigInt(process.env.ACA_FROM_SEQ || 3358),
@@ -79,8 +83,7 @@ const instaBridgeProxy = new Contract(
     },
   );
 
-  // MRL token bridge transfers
-  app.tokenBridge([CHAIN_ID_ACALA, CHAIN_ID_BASE, CHAIN_ID_ETH, CHAIN_ID_SOLANA, CHAIN_ID_SUI],
+  mrlApp.tokenBridge([CHAIN_ID_ACALA, CHAIN_ID_BASE, CHAIN_ID_ETH, CHAIN_ID_SOLANA, CHAIN_ID_SUI],
     async (ctx, next) => {
       const {vaa, sourceTxHash} = ctx;
       const ctxLogger = ctx.logger.child({sourceTxHash});
@@ -113,8 +116,23 @@ const instaBridgeProxy = new Contract(
     },
   );
 
-  // InstaBridge fast-path transfers from Base
-  app.chain(CHAIN_ID_BASE as ChainId).address(
+  // InstaBridge relayer app
+  const instaApp = new StandardRelayerApp<StandardRelayerContext>(
+    Environment.MAINNET,
+    {
+      name: process.env.INSTA_APP_NAME || `insta-relayer`,
+      logger,
+      spyEndpoint,
+      redis,
+      missedVaaOptions: {
+        startingSequenceConfig: {
+          [CHAIN_ID_BASE as ChainId]: BigInt(process.env.INSTA_BASE_FROM_SEQ || 0),
+        }
+      }
+    },
+  );
+
+  instaApp.chain(CHAIN_ID_BASE as ChainId).address(
     INSTA_BRIDGE_BASE,
     async (ctx, next) => {
       const {vaa} = ctx;
@@ -129,5 +147,5 @@ const instaBridgeProxy = new Contract(
     },
   );
 
-  await app.listen();
+  await Promise.all([mrlApp.listen(), instaApp.listen()]);
 })();

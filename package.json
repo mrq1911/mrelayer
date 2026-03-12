@@ -5,10 +5,8 @@
   "scripts": {
     "start": "node app.js",
     "start:base": "node app-base.js",
-    "start:insta": "node app-insta.js",
     "dev": "ts-node src/app.ts",
     "dev:base": "ts-node src/app-base.ts",
-    "dev:insta": "ts-node src/app-insta.ts",
     "build": "tsc",
     "watch": "tsc --watch",
     "redis": "docker run --rm -p 6379:6379 --name redis-docker -d redis",

@@ -6,7 +6,11 @@ export async function loadVaaFromWormholeApi(emitterChain: number, emitterAddr: 
   const url = `https://api.wormholescan.io/api/v1/vaas/${emitterChain}/${emitterAddr}/${sequence}?parsedPayload=true`;
 
   try {
-    const response = await fetch(url);
+    const headers: Record<string, string> = {};
+    if (process.env.WORMHOLE_API_KEY) {
+      headers['X-API-KEY'] = process.env.WORMHOLE_API_KEY;
+    }
+    const response = await fetch(url, { headers });
     const apiData = await response.json();
 
     if (!apiData.data) {

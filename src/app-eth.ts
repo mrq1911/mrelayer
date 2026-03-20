@@ -31,16 +31,23 @@ const tokenBridge = new Contract(
   const queue = createTransferQueue(eth, signer, async (task: TransferTask, nonce: number) => {
     task.logger.info(`Found VAA, completing transfer on Ethereum`);
 
+    const feeData = await eth.getFeeData();
+    const gasOverrides = {
+      nonce,
+      maxFeePerGas: feeData.maxFeePerGas,
+      maxPriorityFeePerGas: 1,
+    };
+
     if (task.payloadType === TokenBridgePayload.TransferWithPayload) {
-      await tokenBridge.callStatic.completeTransferWithPayload(task.vaa.bytes, {nonce, maxPriorityFeePerGas: 1});
+      await tokenBridge.callStatic.completeTransferWithPayload(task.vaa.bytes, {nonce});
       task.logger.info(`Completing transfer with payload`);
-      const tx = await tokenBridge.completeTransferWithPayload(task.vaa.bytes, {nonce, maxPriorityFeePerGas: 1});
+      const tx = await tokenBridge.completeTransferWithPayload(task.vaa.bytes, gasOverrides);
       await tx.wait();
       return tx.hash;
     } else {
-      await tokenBridge.callStatic.completeTransfer(task.vaa.bytes, {nonce, maxPriorityFeePerGas: 1});
+      await tokenBridge.callStatic.completeTransfer(task.vaa.bytes, {nonce});
       task.logger.info(`Completing transfer`);
-      const tx = await tokenBridge.completeTransfer(task.vaa.bytes, {nonce, maxPriorityFeePerGas: 1});
+      const tx = await tokenBridge.completeTransfer(task.vaa.bytes, gasOverrides);
       await tx.wait();
       return tx.hash;
     }

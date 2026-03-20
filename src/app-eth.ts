@@ -32,15 +32,15 @@ const tokenBridge = new Contract(
     task.logger.info(`Found VAA, completing transfer on Ethereum`);
 
     if (task.payloadType === TokenBridgePayload.TransferWithPayload) {
-      await tokenBridge.callStatic.completeTransferWithPayload(task.vaa.bytes, {nonce, maxPriorityFeePerGas: 0});
+      await tokenBridge.callStatic.completeTransferWithPayload(task.vaa.bytes, {nonce, maxPriorityFeePerGas: 1});
       task.logger.info(`Completing transfer with payload`);
-      const tx = await tokenBridge.completeTransferWithPayload(task.vaa.bytes, {nonce, maxPriorityFeePerGas: 0});
+      const tx = await tokenBridge.completeTransferWithPayload(task.vaa.bytes, {nonce, maxPriorityFeePerGas: 1});
       await tx.wait();
       return tx.hash;
     } else {
-      await tokenBridge.callStatic.completeTransfer(task.vaa.bytes, {nonce, maxPriorityFeePerGas: 0});
+      await tokenBridge.callStatic.completeTransfer(task.vaa.bytes, {nonce, maxPriorityFeePerGas: 1});
       task.logger.info(`Completing transfer`);
-      const tx = await tokenBridge.completeTransfer(task.vaa.bytes, {nonce, maxPriorityFeePerGas: 0});
+      const tx = await tokenBridge.completeTransfer(task.vaa.bytes, {nonce, maxPriorityFeePerGas: 1});
       await tx.wait();
       return tx.hash;
     }

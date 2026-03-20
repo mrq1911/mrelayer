@@ -2,15 +2,25 @@
 import logger from "./logger";
 import {ethers} from "ethers";
 
+// Patch global fetch to inject Wormhole API key for wormholescan requests
+if (process.env.WORMHOLE_API_KEY) {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    if (url.includes('wormholescan.io')) {
+      init = init || {};
+      init.headers = new Headers(init.headers);
+      init.headers.set('X-API-KEY', process.env.WORMHOLE_API_KEY!);
+    }
+    return originalFetch(input, init);
+  };
+}
+
 export async function loadVaaFromWormholeApi(emitterChain: number, emitterAddr: string, sequence: number) {
   const url = `https://api.wormholescan.io/api/v1/vaas/${emitterChain}/${emitterAddr}/${sequence}?parsedPayload=true`;
 
   try {
-    const headers: Record<string, string> = {};
-    if (process.env.WORMHOLE_API_KEY) {
-      headers['X-API-KEY'] = process.env.WORMHOLE_API_KEY;
-    }
-    const response = await fetch(url, { headers });
+    const response = await fetch(url);
     const apiData = await response.json();
 
     if (!apiData.data) {

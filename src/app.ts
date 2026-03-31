@@ -20,17 +20,17 @@ import {getPayloadWithFallback, createTransferQueue, TransferTask} from "./commo
 
 const MRL_ADDRESS = "0000000000000000000000000000000000000000000000000000000000000816";
 
-// InstaBridge proxy on Base (emits fast-path Wormhole messages)
-const INSTA_BRIDGE_BASE = "0x73bab4cec782e1530117932cef8492ebe64e112e";
+// Basejump on Base (emits fast-path Wormhole messages)
+const BASEJUMP_BASE = "0xf5b9334e44f800382cb47fc19669401d694e529b";
 
-// InstaBridgeProxy on Moonbeam (receives fast-path VAAs, dispatches via XCM to Hydration)
-const INSTA_BRIDGE_MOONBEAM = "0x54c8ff9230627ed7bd5d7704f60018e47f36f233";
+// BasejumpProxy on Moonbeam (receives fast-path VAAs, dispatches via XCM to Hydration)
+const BASEJUMP_MOONBEAM = "0xf5b9334e44f800382cb47fc19669401d694e529b";
 
 const moonbeam = new ethers.providers.JsonRpcProvider(process.env.MOONBEAM_RPC || 'https://moonbeam-rpc.n.dwellir.com');
 const signer = new ethers.Wallet(process.env.PRIVKEY, moonbeam);
 const gmp = new Contract('0x0000000000000000000000000000000000000816', ['function wormholeTransferERC20(bytes) external'], signer);
-const instaBridgeProxy = new Contract(
-  INSTA_BRIDGE_MOONBEAM,
+const basejumpProxy = new Contract(
+  BASEJUMP_MOONBEAM,
   ['function completeTransfer(bytes memory vaa) external'],
   signer
 );
@@ -39,9 +39,9 @@ const instaBridgeProxy = new Contract(
   const queue = createTransferQueue(moonbeam, signer, async (task: TransferTask, nonce: number) => {
     if (task.type === 'insta') {
       task.logger.info(`Found instant VAA, completing transfer on Moonbeam`);
-      await instaBridgeProxy.callStatic.completeTransfer(task.vaa.bytes, {nonce});
+      await basejumpProxy.callStatic.completeTransfer(task.vaa.bytes, {nonce});
       task.logger.info(`Completing insta transfer`);
-      const tx = await instaBridgeProxy.completeTransfer(task.vaa.bytes, {nonce});
+      const tx = await basejumpProxy.completeTransfer(task.vaa.bytes, {nonce});
       await tx.wait();
       return tx.hash;
     } else {
@@ -57,8 +57,8 @@ const instaBridgeProxy = new Contract(
   const currentNonce = await queue.initNonce();
   logger.info(`account ${signer.address}`);
   logger.info(`nonce ${currentNonce}`);
-  logger.info(`Watching InstaBridge on Base: ${INSTA_BRIDGE_BASE}`);
-  logger.info(`Submitting to InstaBridgeProxy on Moonbeam: ${INSTA_BRIDGE_MOONBEAM}`);
+  logger.info(`Watching Basejump on Base: ${BASEJUMP_BASE}`);
+  logger.info(`Submitting to BasejumpProxy on Moonbeam: ${BASEJUMP_MOONBEAM}`);
 
   const spyEndpoint = process.env.SPY_ENDPOINT || "localhost:7073";
   const redis = {host: process.env.REDIS_HOST || "localhost", port: Number(process.env.REDIS_PORT) || 6379};
@@ -116,24 +116,24 @@ const instaBridgeProxy = new Contract(
     },
   );
 
-  // InstaBridge relayer app
-  const instaApp = new StandardRelayerApp<StandardRelayerContext>(
+  // Basejump relayer app
+  const basejumpApp = new StandardRelayerApp<StandardRelayerContext>(
     Environment.MAINNET,
     {
-      name: process.env.INSTA_APP_NAME || `insta-relayer`,
+      name: process.env.BASEJUMP_APP_NAME || `basejump-relayer`,
       logger,
       spyEndpoint,
       redis,
       missedVaaOptions: {
         startingSequenceConfig: {
-          [CHAIN_ID_BASE as ChainId]: BigInt(process.env.INSTA_BASE_FROM_SEQ || 0),
+          [CHAIN_ID_BASE as ChainId]: BigInt(process.env.BASEJUMP_BASE_FROM_SEQ || 0),
         }
       }
     },
   );
 
-  instaApp.chain(CHAIN_ID_BASE as ChainId).address(
-    INSTA_BRIDGE_BASE,
+  basejumpApp.chain(CHAIN_ID_BASE as ChainId).address(
+    BASEJUMP_BASE,
     async (ctx, next) => {
       const {vaa} = ctx;
       const ctxLogger = logger.child({
@@ -141,11 +141,11 @@ const instaBridgeProxy = new Contract(
         sequence: vaa.sequence.toString(),
       });
 
-      ctxLogger.info(`Received instant message from InstaBridge on Base`);
+      ctxLogger.info(`Received fast-path message from Basejump on Base`);
 
       queue.addToQueue({vaa, type: 'insta', logger: ctxLogger, next});
     },
   );
 
-  await Promise.all([mrlApp.listen(), instaApp.listen()]);
+  await Promise.all([mrlApp.listen(), basejumpApp.listen()]);
 })();

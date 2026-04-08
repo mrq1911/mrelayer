@@ -10,8 +10,8 @@ Relays token transfers **to Moonbeam** from ETH, Base, Acala, Solana, and SUI us
 ### Base Relayer
 Relays token transfers **from Moonbeam to Base** using standard Wormhole Token Bridge.
 
-### Oracle Relayer
-Relays Solana oracle messages to the MessageDispatcher proxy on Moonbeam. Integrated into the main Moonbeam relayer by default, but can also run standalone via `npm run dev:oracle` / `npm run start:oracle`
+### Solana Relayer
+Relays Solana oracle messages to the MessageDispatcher proxy on Moonbeam. Integrated into the main Moonbeam relayer.
 
 ## Environment Variables
 
@@ -43,8 +43,6 @@ npm run dev
 # Run Base relayer (dev)
 npm run dev:base
 
-# Run Oracle relayer standalone (dev)
-npm run dev:oracle
 
 # Start Redis locally
 npm run redis
@@ -64,9 +62,6 @@ npm run start
 
 # Run Base relayer
 npm run start:base
-
-# Run Oracle relayer 
-npm run start:oracle
 ```
 
 ## Docker

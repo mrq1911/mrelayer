@@ -6,8 +6,6 @@
     "start": "node app.js",
     "start:base": "node app-base.js",
     "start:eth": "node app-eth.js",
-    "dev:oracle": "ts-node src/app-oracle.ts",
-    "start:oracle": "node app-oracle.js",
     "dev": "ts-node src/app.ts",
     "dev:base": "ts-node src/app-base.ts",
     "dev:eth": "ts-node src/app-eth.ts",

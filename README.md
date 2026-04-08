@@ -28,7 +28,7 @@ Relays Solana oracle messages to the MessageDispatcher proxy on Moonbeam. Integr
 | `BASE_FROM_SEQ` | Starting sequence for Base VAAs | `244981` |
 | `ACA_FROM_SEQ` | Starting sequence for Acala VAAs | `3358` |
 | `SOLANA_FROM_SEQ` | Starting sequence for Solana VAAs | `1211243` |
-| `SUI_FROM_SEQ` | Starting sequence for SUI VAAs | `219460` |
+| `SUI_FROM_SEQ` | Starting sequence for SUI VAAs | `217370` |
 | `ORACLE_SOLANA_FROM_SEQ` | Starting sequence for Solana oracle VAAs | `0` |
 
 ## Development

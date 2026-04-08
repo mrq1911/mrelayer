@@ -94,10 +94,10 @@ const dispatcher = new Contract(
       missedVaaOptions: {
         startingSequenceConfig: {
           [CHAIN_ID_ACALA as ChainId]: BigInt(process.env.ACA_FROM_SEQ || 3358),
-          [CHAIN_ID_BASE as ChainId]: BigInt(process.env.BASE_FROM_SEQ || 251750),
+          [CHAIN_ID_BASE as ChainId]: BigInt(process.env.BASE_FROM_SEQ || 244981),
           [CHAIN_ID_ETH as ChainId]: BigInt(process.env.ETH_FROM_SEQ || 499562),
           [CHAIN_ID_SOLANA as ChainId]: BigInt(process.env.SOLANA_FROM_SEQ || 1211243),
-          [CHAIN_ID_SUI as ChainId]: BigInt(process.env.SUI_FROM_SEQ || 219460),
+          [CHAIN_ID_SUI as ChainId]: BigInt(process.env.SUI_FROM_SEQ || 217370),
         }
       }
     },

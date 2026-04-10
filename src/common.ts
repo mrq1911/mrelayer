@@ -91,7 +91,7 @@ export async function getPayloadWithFallback(ctx: any, ctxLogger: any) {
 
 export type TransferTask = {
   vaa: any;
-  type?: 'mrl' | 'insta';
+  type?: 'mrl' | 'insta' | 'oracle';
   payloadType?: number;
   logger: any;
   next: () => void;
@@ -124,7 +124,7 @@ export function createTransferQueue(
       task.next();
     } catch (e) {
       const text = JSON.stringify(e);
-      if (text.indexOf('transfer already completed') !== -1 || text.indexOf('already been redeemed') !== -1) {
+      if (text.indexOf('transfer already completed') !== -1 || text.indexOf('already been redeemed') !== -1 || text.indexOf('VAA already processed') !== -1) {
         task.logger.info(`Transfer already completed`);
         task.next();
       } else if (text.indexOf('Invalid GMP Payload') !== -1) {
